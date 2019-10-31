@@ -3,7 +3,7 @@ var gui = require('nw.gui');
 
 var win = gui.Window.get();
 var isMac = require('os').platform() === 'darwin';
-// win.showDevTools(); // uncomment if you want to debug
+//win.showDevTools(); // uncomment if you want to debug
 
 if(isMac) {
     document.title = '\u3000'; // to get around https://github.com/nwjs/nw.js/issues/3645
@@ -18,7 +18,7 @@ $.fn.on = function(){};
 var base_path_arr = window.location.href.split('/');
 base_path_arr.pop();
 clippy.BASE_PATH = base_path_arr.join('/') + '/';
-clippy.Balloon.prototype.CLOSE_BALLOON_DELAY = 10000;
+clippy.Balloon.prototype.CLOSE_BALLOON_DELAY = 100000;
 
 // show clippy
 clippy.load('Clippy', function(agent){
@@ -41,9 +41,15 @@ clippy.load('Clippy', function(agent){
         agent.show();
     }
 
-    ws.on('say', function(msg) {
+   function say(msg) {
         ensureVisible();
         agent.speak(msg);
+   }
+
+    //say("Hello world. This is a rather long sentence. Does this work? How complex can this be really. Longer than this? Thats crazy.");
+
+    ws.on('say', function(msg) {
+        say(msg);
     });
 
     var windowX = null;
