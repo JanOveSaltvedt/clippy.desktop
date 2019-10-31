@@ -11,7 +11,8 @@ gulp.task('copy', gulp.series(function(done) {
         './package.json',
         './index.html',
         './script.js',
-        './node_modules/clippy.js/build/clippy.css',
+        './clippy.css',
+        './node_modules/clippy.js/agents/**/*',
         './style.css'
     ])
         .pipe(gulp.dest(appDirectory))
@@ -21,7 +22,8 @@ gulp.task('copy', gulp.series(function(done) {
 gulp.task('third-party-scripts', gulp.series(function(done) {
     gulp.src([
         './node_modules/jquery/dist/jquery.js',
-        './node_modules/clippy.js/build/clippy.js'
+        './node_modules/clippy.js/build/clippy.js',
+        './node_modules/socket.io-client/dist/socket.io.js'
     ])
         .pipe(plugins.concat('third-party.js'))
         .pipe(gulp.dest(appDirectory))
@@ -47,14 +49,9 @@ gulp.task('build', gulp.series('compile', () => new NwBuilder({
 }).build()));
 
 
-gulp.task('zip-win32', gulp.series('build', done => zip('win32', done)));
-gulp.task('zip-win64', gulp.series('build', done => zip('win64', done)));
-gulp.task('zip-osx32', gulp.series('build', done => zip('osx32', done)));
-gulp.task('zip-osx64', gulp.series('build', done => zip('osx64', done)));
-gulp.task('zip-linux32', gulp.series('build', done => zip('linux32', done)));
 gulp.task('zip-linux64', gulp.series('build', done => zip('linux64', done)));
 
-gulp.task('release', gulp.series('zip-win32', 'zip-win64', 'zip-osx32', 'zip-osx64', 'zip-linux32', 'zip-linux64'));
+gulp.task('release', gulp.series('zip-linux64'));
 
 
 gulp.task('default', gulp.series('release'));

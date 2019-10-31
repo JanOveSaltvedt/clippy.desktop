@@ -1,4 +1,6 @@
 var gui = require('nw.gui');
+// var ioclient = require('socket.io-client');
+
 var win = gui.Window.get();
 var isMac = require('os').platform() === 'darwin';
 // win.showDevTools(); // uncomment if you want to debug
@@ -7,15 +9,42 @@ if(isMac) {
     document.title = '\u3000'; // to get around https://github.com/nwjs/nw.js/issues/3645
 }
 
+
+
 // don't let clippy.js add any handlers
 $.fn.on = function(){};
 
+// Load clippy from localhost instead of the default amazon s3 bucket
+var base_path_arr = window.location.href.split('/');
+base_path_arr.pop();
+clippy.BASE_PATH = base_path_arr.join('/') + '/';
+clippy.Balloon.prototype.CLOSE_BALLOON_DELAY = 10000;
+
 // show clippy
 clippy.load('Clippy', function(agent){
-    agent.show();
-    var intiialSpeechTimeoutId = setTimeout(function() {
-        agent.speak("Need some help closing me? Try double-clicking...");
-    }, 20000);
+    // agent.show();
+    var url = "http://10.13.37.100:4000/clippy";
+    if (process.env.WS_URL !== undefined) {
+        url = process.env.WS_URL;
+    }
+    var ws = io(url);
+    ws.on('connect', function () {
+        console.log("WS connected");
+    });
+    ws.on('error', function(socket){
+        console.log('Error!');
+    });
+
+    function ensureVisible() {
+        win.show();
+        document.body.classList.remove('hidden');
+        agent.show();
+    }
+
+    ws.on('say', function(msg) {
+        ensureVisible();
+        agent.speak(msg);
+    });
 
     var windowX = null;
     var windowY = null;
@@ -31,34 +60,17 @@ clippy.load('Clippy', function(agent){
         win.blur();
     });
 
-    // In case the OS doesn't support blurring, we'll just call animate every now and again anyway
-    setInterval(function(){
-        agent.animate();
-    }, 12000);
-
     // Since double-clicking draggable areas triggers maximizing on some platforms, when tell the user double-clicking
     // closes clippy but actually we'll hide the window, unmaximize, resize back to the normal size and show again
     // with a speech bubble
     win.on('maximize', function(){
         document.body.classList.add('hidden');
         win.hide();
-        if(intiialSpeechTimeoutId) {
-            clearTimeout(intiialSpeechTimeoutId);
-            intiialSpeechTimeoutId = null;
-        }
 
         setTimeout(function(){
             win.unmaximize();
             win.resizeTo(gui.App.manifest.window.width, gui.App.manifest.window.height);
             win.moveTo(windowX, windowY);
         }, 250);
-
-        setTimeout(function(){
-            win.show();
-            document.body.classList.remove('hidden');
-            setTimeout(function(){
-                agent.speak("Need some help?");
-            }, 500);
-        }, 2000);
     });
 });
